@@ -1,0 +1,20 @@
+{{namehtml}}
+
+<table border="3">
+    <tr>
+        <td>id</td>
+        <td>picture</td>
+        <td>username</td>
+        <td>email</td>
+        <td>nbr_books</td>
+    </tr>
+    {% for a in authorshtml %}
+    <tr>
+        <td>{{a.id}}</td>
+        <td><img src="{{asset(a.picture)}}" alt="pic"></td>
+        <td>{{a.username}}</td>
+        <td>{{a.email}}</td>
+        <td>{{a.nb_books}}</td>
+    </tr>
+    {% endfor %}
+</table>
