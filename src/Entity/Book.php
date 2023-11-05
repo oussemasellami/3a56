@@ -17,7 +17,7 @@ class Book
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTimeInterface $publicationdate = null;
+    private ?\DateTimeInterface $publictiondate = null;
 
     #[ORM\Column]
     private ?bool $published = null;
@@ -30,8 +30,7 @@ class Book
         return $this->ref;
     }
 
-
-    public function setRef(string $ref): static
+    public function setRef(int $ref): static
     {
         $this->ref = $ref;
 
@@ -50,14 +49,14 @@ class Book
         return $this;
     }
 
-    public function getPublicationdate(): ?\DateTimeInterface
+    public function getPublictiondate(): ?\DateTimeInterface
     {
-        return $this->publicationdate;
+        return $this->publictiondate;
     }
 
-    public function setPublicationdate(\DateTimeInterface $publicationdate): static
+    public function setPublictiondate(\DateTimeInterface $publictiondate): static
     {
-        $this->publicationdate = $publicationdate;
+        $this->publictiondate = $publictiondate;
 
         return $this;
     }

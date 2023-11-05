@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
-use App\Repository\AuthorRepository;
 use App\Entity\Author;
 use App\Form\AuthorType;
+use App\Form\MinmaxType;
+use App\Form\SearchType;
+use App\Repository\AuthorRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class AuthorController extends AbstractController
 {
+
 
     public $authors = array(
         array('id' => 1, 'picture' => '/images/Victor-Hugo.jpg', 'username' => 'Victor Hugo', 'email' => 'victor.hugo@gmail.com ', 'nb_books' => 100),
@@ -27,107 +30,145 @@ class AuthorController extends AbstractController
         ]);
     }
 
-    #[Route('/showDBauthor', name: 'showDBauthor')]
-    public function showDBauthor(AuthorRepository $authorRepo): Response
+    #[Route('/orderauthor', name: 'orderauthor')]
+    public function orderauthor(AuthorRepository $authorRepository): Response
     {
-
-        $x = $authorRepo->findAll();
-        return $this->render('author/showDBauthor.html.twig', [
-            'authors' => $x
+        $ssssssss = $authorRepository->orderbydesc();
+        //var_dump($ssssssss) . die();
+        return $this->render('author/order.html.twig', [
+            'author' => $ssssssss
         ]);
     }
 
-    #[Route('/addstaticSauthor', name: 'addstaticSauthor')]
-    public function addstaticSauthor(ManagerRegistry $manager): Response
+    #[Route('/showdbauthor', name: 'showdbauthor')]
+    public function showdbauthor(AuthorRepository $authorRepository, Request $request): Response
     {
-        $em = $manager->getManager();
-        $author = new Author();
-
-        $author->setUsername("3a56");
-        $author->setEmail("3a56@esprit.tn");
-        $em->persist($author);
-        $em->flush();
-
-        return new Response("add with succcess");
+        $author = $authorRepository->findAll();
+        // $form = $this->createForm(MinmaxType::class);
+        $form = $this->createForm(SearchType::class);
+        $form->handleRequest($request);
+        //var_dump($form->getData()) . die();
+        if ($form->isSubmitted()) {
+            // $min = $form->get('min')->getData();
+            // $max = $form->get('max')->getData();
+            $username = $form->get('username')->getData();
+            dump($form->getData()). die();
+            $authors = $authorRepository->searchauthor($username);
+            // $authors = $authorRepository->searchminmax($min,$max);
+            //var_dump($authors) . die();
+            return $this->render('author/showdbauthor.html.twig', array('author' => $authors,  'f' => $form->createView()));
+        }
+        return $this->renderForm('author/showdbauthor.html.twig', [
+            'f' => $form,
+            'author' => $author
+        ]);
     }
 
     #[Route('/addauthor', name: 'addauthor')]
-    public function addauthor(ManagerRegistry $manager, Request $req): Response
+    public function addauthor(ManagerRegistry $managerRegistry): Response
     {
-        $em = $manager->getManager();
+        $em = $managerRegistry->getManager();
         $author = new Author();
-        $form = $this->createForm(AuthorType::class,   $author);
+        $author->setUsername("3a58");
+        $author->setEmail("3a58@esprit.tn");
+        $em->persist($author);
+        $em->flush();
+        return new Response("great add");
+    }
+
+    #[Route('/addformauthor', name: 'addformauthor')]
+    public function addformauthor(ManagerRegistry $managerRegistry, Request $req): Response
+    {
+        $em = $managerRegistry->getManager();
+        $author = new Author();
+        $form = $this->createForm(AuthorType::class, $author);
         $form->handleRequest($req);
         if ($form->isSubmitted() and $form->isValid()) {
+
             $em->persist($author);
             $em->flush();
-
-            return $this->redirectToRoute('showDBauthor');
+            return $this->redirectToRoute('showdbauthor');
         }
-
-        return $this->renderForm('author/add.html.twig', [
+        return $this->renderForm('author/addformauthor.html.twig', [
             'f' => $form
         ]);
     }
 
-    #[Route('/editauthor/{id}', name: 'editauthor')]
-    public function editauthor($id, ManagerRegistry $manager, AuthorRepository $authorrepo, Request $req): Response
+    #[Route('/showbooksauthor/{id}', name: 'showbooksauthor')]
+    public function showbooksauthor($id, AuthorRepository $authorRepository): Response
     {
+        $listbook = $authorRepository->showbooksauthor($id);
+        // var_dump($listbook) . die();
+        return $this->render('author/showbooksauthor.html.twig', [
+            'a' => $listbook
+        ]);
+    }
+    #[Route('/editauthor/{id}', name: 'editauthor')]
+    public function editauthor($id, AuthorRepository $authorRepository, Request $req, ManagerRegistry $managerRegistry): Response
+    {
+        $em = $managerRegistry->getManager();
         // var_dump($id) . die();
-
-        $em = $manager->getManager();
-        $idData = $authorrepo->find($id);
-        // var_dump($idData) . die();
-        $form = $this->createForm(AuthorType::class, $idData);
+        $dataid = $authorRepository->find($id);
+        // var_dump($dataid) . die();
+        $form = $this->createForm(AuthorType::class, $dataid);
         $form->handleRequest($req);
-
         if ($form->isSubmitted() and $form->isValid()) {
-            $em->persist($idData);
+            $em->persist($dataid);
             $em->flush();
-
-            return $this->redirectToRoute('showDBauthor');
+            return $this->redirectToRoute('showdbauthor');
         }
 
-        return $this->renderForm('author/edit.html.twig', [
-            'form' => $form
+        return $this->renderForm('author/editauthor.html.twig', [
+            'x' => $form
         ]);
     }
 
     #[Route('/deleteauthor/{id}', name: 'deleteauthor')]
-    public function deleteauthor($id, ManagerRegistry $manager, AuthorRepository $repo): Response
-    {
-        $emm = $manager->getManager();
-        $idremove = $repo->find($id);
-        $emm->remove($idremove);
-        $emm->flush();
-
-
-        return $this->redirectToRoute('showDBauthor');
+    public function deleteauthor(
+        $id,
+        AuthorRepository $authorRepository,
+        ManagerRegistry $managerRegistry
+    ): Response {
+        $em = $managerRegistry->getManager();
+        $dataid = $authorRepository->find($id);
+        $em->remove($dataid);
+        $em->flush();
+        return $this->redirectToRoute('showdbauthor');
     }
 
-    #[Route('/showauthor', name: 'app_showauthor')]
-    public function showauthor(): Response
+    #[Route('/showauthor/{name}', name: 'app_showauthor')]
+    public function showauthor($name): Response
     {
-
         return $this->render('author/show.html.twig', [
-            'authorshtml' => $this->authors,
+            'name' => $name
         ]);
     }
 
-    #[Route('/authorDetails/{id}', name: 'authorDetails')]
-    public function authorDetails($id): Response
+    #[Route('/showtableauthor', name: 'app_showtableauthor')]
+    public function showtableauthor(): Response
     {
+
+        return $this->render('author/list.html.twig', [
+            'author' => $this->authors
+        ]);
+    }
+
+    #[Route('/showbyidauthor/{id}', name: 'showbyidauthor')]
+    public function showbyidauthor($id): Response
+    {
+
         //var_dump($id) . die();
 
-        $author = null;
-        foreach ($this->authors as $authorData) {
-            if ($authorData['id'] == $id) {
-                $author = $authorData;
+        $x = null;
+        foreach ($this->authors as $authorD) {
+            if ($authorD['id'] == $id) {
+                $x = $authorD;
             }
         }
+        //var_dump($x) . die();
 
-        return $this->render('author/details.html.twig', [
-            'author' => $author
+        return $this->render('author/showbyidauthor.html.twig', [
+            'author' => $x
         ]);
     }
 }
